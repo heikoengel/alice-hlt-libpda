@@ -18,3 +18,28 @@ uio_pci_dma:
     - cd patches/linux_uio
     - make
   when: manual
+
+.build_on_docker_template: &build_on_docker_def
+  stage: build
+  tags:
+    - docker
+  script:
+    - cd patches/linux_uio/
+    - for KDIR in /lib/modules/*; do SRCDIR=$(mktemp -d); echo ${SRCDIR}; cp Makefile_dma.temp ${SRCDIR}/Makefile; cp uio_pci_dma.* ${SRCDIR}; make -C ${SRCDIR} KDIR=$KDIR/build; rm -rf ${SRCDIR}; done
+
+ScientificLinux 6:
+  image: hengel/libpda_slc6
+  <<: *build_on_docker_def
+  allow_failure: true
+
+CERN CentOS 7:
+  image: hengel/libpda_cc7
+  <<: *build_on_docker_def
+
+Debian 8 (Jessie):
+  image: hengel/libpda_debian8
+  <<: *build_on_docker_def
+
+Debian 9 (Stretch):
+  image: hengel/libpda_debian9
+  <<: *build_on_docker_def
