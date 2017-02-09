@@ -1,5 +1,6 @@
 obj-m := uio_pci_dma.o
 PWD   := $(shell pwd)
+CFLAGS_uio_pci_dma.o := -Wall -Werror
 
 all:
 	make -C $(KDIR) M=$(PWD) modules
