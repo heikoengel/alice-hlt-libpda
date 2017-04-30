@@ -8,6 +8,7 @@ libpad:
   script:
     - ./configure --debug=true
     - make
+  when: manual
 
 uio_pci_dma:
   stage: build
@@ -16,3 +17,4 @@ uio_pci_dma:
   script:
     - cd patches/linux_uio
     - make
+  when: manual
