@@ -319,6 +319,10 @@ probe
 
     UIO_DEBUG_PRINTF("Set DMA-Master\n");
     pci_set_master(pci_device);
+
+    pcie_capability_set_word(pci_device, PCI_EXP_DEVCTL,
+			     PCI_EXP_DEVCTL_EXT_TAG);
+
     DMA_MASK( _ );
     DMA_MASK( _consistent_ );
 
