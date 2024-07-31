@@ -60,7 +60,7 @@
 //#define UIO_PDA_DEBUG
 //#define UIO_PDA_DEBUG_SG
 #define UIO_PDA_IOMMU
-#define UIO_PDA_USE_PAGEFAULT_HANDLER
+//#define UIO_PDA_USE_PAGEFAULT_HANDLER
 
 
 #include "uio_pci_dma.h"
@@ -192,10 +192,10 @@ irqhandler
 }
 
 #define DMA_MASK( tag )                                                    \
-if( (err = pci_set ## tag ## dma_mask(pci_device, DMA_BIT_MASK(64))) )     \
+if( (err = dma_set ## tag ## mask(&pci_device->dev, DMA_BIT_MASK(64))) )     \
 {                                                                          \
     printk(DRIVER_NAME " : Warning: couldn't set 64-bit PCI DMA mask.\n"); \
-    if( (err = pci_set_dma_mask(pci_device, DMA_BIT_MASK(32))) )           \
+    if( (err = dma_set_mask(&pci_device->dev, DMA_BIT_MASK(32))) )           \
     { UIO_PDA_ERROR("Can't set PCI DMA mask, aborting!\n", exit); }        \
 }
 
@@ -266,12 +266,12 @@ probe
     spin_lock_init(&alloc_free_lock);
 
     /* attr_bin_request */
-    BIN_ATTR_PDA(request, sizeof(struct uio_pci_dma_private), S_IWUGO, NULL,
-        uio_pci_dma_sysfs_request_buffer_write, NULL);
+    BIN_ATTR_PDA(request, sizeof(struct uio_pci_dma_private), S_IWUSR | S_IWGRP,
+                 NULL, uio_pci_dma_sysfs_request_buffer_write, NULL);
 
     /* attr_bin_free */
-    BIN_ATTR_PDA(free, 0, S_IWUGO, NULL,
-        uio_pci_dma_sysfs_delete_buffer_write, NULL);
+    BIN_ATTR_PDA(free, 0, S_IWUSR | S_IWGRP, NULL,
+                 uio_pci_dma_sysfs_delete_buffer_write, NULL);
 
     /* attr_bin_max_payload_size */
     BIN_ATTR_PDA(max_payload_size, sizeof(int), S_IRUGO,
@@ -324,7 +324,7 @@ probe
 			     PCI_EXP_DEVCTL_EXT_TAG);
 
     DMA_MASK( _ );
-    DMA_MASK( _consistent_ );
+    DMA_MASK( _coherent_ );
 
     UIO_DEBUG_PRINTF("Generate a new sysfs folder\n");
     kset                 = kset_create_and_add("dma", NULL, &pci_device->dev.kobj);
@@ -362,7 +362,8 @@ probe
     for(i = 0; i<PCI_NUM_RESOURCES; i++)
     {
         dma_device->attr_bar[i].attr.name = NULL;
-        dma_device->attr_bar[i].attr.mode = S_IRUGO|S_IWUGO;
+        dma_device->attr_bar[i].attr.mode =
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
         dma_device->attr_bar[i].size      = 0;
         dma_device->attr_bar[i].read      = NULL;
         dma_device->attr_bar[i].write     = NULL;
@@ -487,6 +488,7 @@ remove(struct pci_dev *pci_device)
 static const struct pci_device_id id_table[] = {
     {PCI_DEVICE(0x10dc, 0x01a0) }, /* C-RORC PCI ID as registered at CERN */
     {PCI_DEVICE(0x10dc, 0xbeaf) }, /* FLIB intermediate PCI ID */
+    {PCI_DEVICE(0x10ee, 0xf1e5) }, /* CRI FLIM */
     { 0, }
 };
 
